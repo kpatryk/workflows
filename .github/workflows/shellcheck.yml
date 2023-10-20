@@ -1,0 +1,25 @@
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: false
+        type: string
+        default: ubuntu-latest
+      scandir:
+        required: false
+        type: string
+        default: functions/
+
+jobs:
+  shellcheck:
+    name: Test shell scripts
+    runs-on: ${{ inputs.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Validate with shellcheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: ${{ inputs.scandir }}
