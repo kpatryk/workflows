@@ -1,0 +1,65 @@
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: false
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  pre-commit:
+    runs-on: ${{ inputs.os }}
+
+    strategy:
+      matrix:
+        python-version: [3.11]
+        poetry-version: [1.6.1]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ matrix.poetry-version }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Load cached virtualenv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: ${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Show project settings
+        run: |
+          echo "Cache key: ${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}"
+          poetry --version
+          poetry debug info
+
+      - name: Check pre-commit hooks
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config -l | grep user
+
+          poetry run pre-commit autoupdate
+          if ! git diff --quiet; then
+            echo "Changes detected.."
+            git status
+            git commit -am "build(ci): Updated pre-commit hooks versions [bot]"
+            git status
+            echo pushing: git push origin HEAD
+          fi
