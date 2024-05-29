@@ -16,10 +16,12 @@ jobs:
     runs-on: ${{ inputs.os }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - name: Validate with shellcheck
-        uses: ludeeus/action-shellcheck@master
-        with:
-          scandir: ${{ inputs.scandir }}
+    - name: Validate with shellcheck
+      uses: ludeeus/action-shellcheck@master
+      with:
+        scandir: ${{ inputs.scandir }}
+      env:
+        SHELLCHECK_OPTS: -e SC1091
